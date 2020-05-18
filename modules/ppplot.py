@@ -8,9 +8,11 @@
 import time as timelib
 # added librairies
 import numpy as np
+import math# as m
 import matplotlib.pyplot as mpl
 from matplotlib.cm import get_cmap
 import matplotlib.ticker as mtick
+import matplotlib.axes
 # personal librairies
 import ppcompute
 ###############################################
@@ -38,13 +40,14 @@ mpl.rcParams['ytick.major.pad'] = 10
 whereset = None
 # - some good default settings.
 # (contours)
-cline = 0.55
-#cline = 0.8
+#cline = 0.55
+cline = 2
 # (vectors)
 widthvec = 0.002
 reducevec = 20.
 # (colorbar)
 zeorientation="vertical"
+#zeorientation="horizontal"
 zefrac = 0.05
 # (save figures)
 pad_inches_value=0.25
@@ -483,6 +486,7 @@ class plot():
                  nyticks=10,\
                  cbticks=None,\
                  xdate=False,\
+                 errorbar=None,\
                  title=""):
         ## what could be defined by the user
         self.fig = fig
@@ -512,6 +516,7 @@ class plot():
         self.nyticks = nyticks
         self.cbticks = cbticks
         self.xdate = xdate
+        self.errorbar = errorbar
         ## other useful arguments
         ## ... not used here in ppplot but need to be attached to plot object
         self.axisbg = "white"
@@ -622,6 +627,7 @@ class plot1d(plot):
                  color=None,\
                  marker='x',\
                  legend=None,\
+                 errorbar=None,\
                  *args, **kwargs):
         ## get initialization from parent class
         plot.__init__(self,*args, **kwargs)
@@ -630,6 +636,7 @@ class plot1d(plot):
         self.color = color
         self.marker = marker
         self.legend = legend
+        self.errorbar = errorbar
 
     # define_from_var
     # ... this uses settings in set_var.txt
@@ -679,6 +686,8 @@ class plot1d(plot):
             self.ax.plot(x,y,linestyle=self.linestyle,marker=self.marker,label=self.legend)
         else:
             self.ax.plot(x,y,marker=self.marker,label=self.legend)
+        if self.errorbar is not None:
+            self.ax.errorbar(x,y,yerr=self.errorbar,fmt='.')
         ## AXES
         #ax = mpl.gca()
         # make log axes and/or invert ordinate
@@ -1157,8 +1166,9 @@ class plot2d(plot):
                    if x.ndim < 2 and y.ndim < 2: x,y = np.meshgrid(x,y)
 
                 if self.rescalevec:
-                    vecx = self.vx/ppcompute.mean(self.vx)
-                    vecy = self.vy/ppcompute.mean(self.vy)
+                    vecx = self.vx/(6.0268000E7*abs(ppcompute.mean(self.vx)))
+                    vecy = self.vy/(abs(ppcompute.mean(self.vy)))
+                
                 # reference vector is scaled
                 if self.wscale is None:
                     if self.rescalevec: 
@@ -1176,7 +1186,7 @@ class plot2d(plot):
                     q = self.ax.quiver( x[::self.svy,::self.svx],y[::self.svy,::self.svx],\
                                     vecx[::self.svy,::self.svx],vecy[::self.svy,::self.svx],\
                                     angles='xy',color=self.colorvec,pivot='middle',\
-                                    scale=self.wscale*reducevec,width=widthvec )
+                                    scale=self.wscale*reducevec,width=2*widthvec )
                 # make vector key.
                 #keyh = 1.025 ; keyv = 1.05 # upper right corner over colorbar
                 keyh = 0.97 ; keyv = 1.06
@@ -1185,10 +1195,10 @@ class plot2d(plot):
 
                 if orientation=="horizontal": keyh = 0.95 ; keyv = -0.30
 
-                p = self.ax.quiverkey(q,keyh,keyv,\
-                                  self.wscale,str(int(self.wscale)),\
-                                  fontproperties={'size': ft*1.25},\
-                                  color="black",labelpos='S',labelsep = 0.07)
+#                p = self.ax.quiverkey(q,keyh,keyv,\
+#                                  self.wscale,str(int(self.wscale)),\
+#                                  fontproperties={'size': ft*1.25},\
+#                                  color="black",labelpos='S',labelsep = 0.07)
                 #redefine bounds
                 x1, x2 = self.ax.get_xbound()
                 if self.xmin is not None: x1 = self.xmin

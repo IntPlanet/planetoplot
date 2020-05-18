@@ -194,6 +194,7 @@ class pp():
                       colorbar=None,\
                       cbticks=None,\
                       linestyle=None,\
+                      errorbar=None,\
                       marker=None,\
                       color=None,\
                       legend=None,\
@@ -276,6 +277,7 @@ class pp():
         self.colorbar = colorbar
         self.cbticks = cbticks
         self.linestyle = linestyle
+        self.errorbar = errorbar
         self.marker = marker
         self.color = color
         self.legend = legend
@@ -346,6 +348,7 @@ class pp():
             self.colorbar = other.colorbar
             self.cbticks = other.cbticks
             self.linestyle = other.linestyle
+            self.errorbar = other.errorbar
             self.marker = other.marker
             self.color = other.color
             self.legend = other.legend
@@ -967,6 +970,7 @@ class pp():
                     # -- 1D specific
                     if dp == 1:
                         if self.linestyle is not None: plobj.linestyle = self.linestyle
+                        if self.errorbar is not None: plobj.errorbar = self.errorbar
                         if self.marker is not None: plobj.marker = self.marker
                         if self.color is not None: plobj.color = self.color
                         if self.legend is not None: plobj.legend = self.legend
@@ -1278,6 +1282,11 @@ class pp():
             try: self.p[iii].linestyle = opt.linestyle[iii]
             except: 
                 try: self.p[iii].linestyle = opt.linestyle[0]
+                except: pass
+            ###
+            try: self.p[iii].errorbar = opt.errorbar[iii]
+            except: 
+                try: self.p[iii].errorbar = opt.errorbar[0]
                 except: pass
             ###
             try: self.p[iii].color = opt.color[iii]
