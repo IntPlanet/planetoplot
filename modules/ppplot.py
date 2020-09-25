@@ -8,7 +8,11 @@
 import time as timelib
 # added librairies
 import numpy as np
-import math# as m
+#####
+## if backend pb
+#import matplotlib
+#matplotlib.use('TkAgg')
+#####
 import matplotlib.pyplot as mpl
 from matplotlib.cm import get_cmap
 import matplotlib.ticker as mtick
@@ -29,7 +33,7 @@ mpl.rcParams['font.family'] = "serif"
 mpl.rcParams['contour.negative_linestyle'] = "dashed" # ou "solid"
 mpl.rcParams['verbose.level'] = "silent"
 mpl.rcParams['lines.linewidth'] = 1.5
-mpl.rcParams['lines.markersize'] = 10
+mpl.rcParams['lines.markersize'] = 2 #10
 mpl.rcParams['xtick.major.pad'] = 10
 mpl.rcParams['ytick.major.pad'] = 10
 
@@ -182,6 +186,14 @@ def quickplot(field):
 def changefont(num):
     mpl.rcParams['font.size'] = num
 
+# a function to change markersize
+def changemarkersize(num):
+    mpl.rcParams['lines.markersize'] = num
+
+# a function to change markersize
+def changelinewidth(num):
+    mpl.rcParams['lines.linewidth'] = num
+
 # continuity with matplotlib
 def close():
     mpl.close()
@@ -199,10 +211,10 @@ def rainbow(cb="jet",num=8):
     ax._get_lines.set_color_cycle([pal(i) for i in np.linspace(0,0.9,num)])
 
 # a function to define nice minor ticks for log plots
-def special_log(x, pos):
+def special_log(x, pos,tab=[2,3,5]):
     norm = ppcompute.get_norm(x)
-    out = x/norm
-    if out in [2,3,5,7]:
+    out = int(x/norm)
+    if out in tab:
       ret = r'$%.0f$' % (out)
     #elif out == 1:
     #  expo = ppcompute.get_exponent(x)
@@ -354,7 +366,7 @@ def save(mode=None,filename=None,folder="./",includedate=False,res=150,custom=Fa
                   name = name + "_" + "%03d" % (ttt)
           name = name +"."+mode
           ## save file
-          print "**** Saving file in "+mode+" format... Please wait."
+          #print "**** Saving file in "+mode+" format... Please wait."
           if not custom:
               # ... regular plots
               mpl.savefig(name,dpi=res,pad_inches=pad_inches_value,bbox_inches='tight')
@@ -487,6 +499,7 @@ class plot():
                  cbticks=None,\
                  xdate=False,\
                  errorbar=None,\
+                 ncol=1,\
                  title=""):
         ## what could be defined by the user
         self.fig = fig
@@ -517,6 +530,7 @@ class plot():
         self.cbticks = cbticks
         self.xdate = xdate
         self.errorbar = errorbar
+        self.ncol = ncol
         ## other useful arguments
         ## ... not used here in ppplot but need to be attached to plot object
         self.axisbg = "white"
@@ -679,7 +693,7 @@ class plot1d(plot):
         # make the 1D plot
         # either request linestyle or let matplotlib decide
         if self.linestyle is not None and self.color is not None:
-            self.ax.plot(x,y,self.color+self.linestyle,marker=self.marker,label=self.legend)
+            self.ax.plot(x,y,color=self.color,linestyle=self.linestyle,marker=self.marker,label=self.legend)
         elif self.color is not None:
             self.ax.plot(x,y,color=self.color,marker=self.marker,label=self.legend)
         elif self.linestyle is not None:
@@ -703,7 +717,7 @@ class plot1d(plot):
         # add a label for line(s)
         if self.legend is not None:
             if self.legend != "":
-                self.ax.legend(loc="best",fancybox=True)
+                self.ax.legend(loc="best",fancybox=True,ncol=self.ncol)
 
         # format labels
         # -- on which axis?
@@ -804,6 +818,7 @@ class plot2d(plot):
                  vmax=None,\
                  showcb=True,\
                  wscale=None,\
+                 vlev=None,\
                  rescalevec=None,\
                  svx=3,\
                  svy=3,\
@@ -832,6 +847,7 @@ class plot2d(plot):
         self.sigma = sigma
         self.showcb = showcb
         self.wscale = wscale
+        self.vlev = vlev
         self.rescalevec = rescalevec
         self.svx = svx
         self.svy = svy
@@ -897,7 +913,10 @@ class plot2d(plot):
         what_I_plot = bounds(self.f,zevmin,zevmax)
         # define contour field levels. define color palette
         ticks = self.div + 1
-        zelevels = np.linspace(zevmin,zevmax,ticks)
+        if self.vlev is None:
+          zelevels = np.linspace(zevmin,zevmax,ticks)
+        else:
+          zelevels = self.vlev
         palette = get_cmap(name=self.colorbar)
         # do the same thing for possible contourline entries
         if self.c is not None:
@@ -936,14 +955,15 @@ class plot2d(plot):
             # make shaded and line contours
             if self.c is not None: 
                 objC = self.ax.contour(x, y, what_I_contour, \
-                            self.clev, colors = self.ccol, linewidths = cline)
-                ft = int(mpl.rcParams['font.size']*0.55)
+                            self.clev, colors = self.ccol) #, linewidths = cline)
+                ft = int(mpl.rcParams['font.size']*0.85)
                 if self.clab:
                   self.ax.clabel(objC, inline=1, fontsize=ft,\
                              inline_spacing=1,fmt=self.cfmt)
             cont = self.ax.contourf(x, y, \
                          self.f, \
-                         zelevels, cmap=palette)
+                         zelevels, cmap=palette, \
+                         norm=mpl.cm.colors.BoundaryNorm(zelevels,palette.N))
             #mpl.pcolor(x,y,\
             #             self.f, \
             #             cmap=palette)
@@ -1112,7 +1132,10 @@ class plot2d(plot):
             if self.c is not None: 
                 #zelevelsc = np.arange(900.,1100.,5.)
                 objC2 = m.contour(x, y, what_I_contour, \
-                            self.clev, colors = self.ccol, linewidths = cline)
+                            self.clev, colors = self.ccol) #, linewidths = cline)
+                if self.clab:
+                    self.ax.clabel(objC2, inline=1, fontsize=ft,\
+                                    inline_spacing=1,fmt=self.cfmt)
                 #mpl.clabel(objC2, inline=1, fontsize=10,manual=True,fmt='-%2.0f$^{\circ}$C',colors='r')
                 #mpl.clabel(objC2, inline=0, fontsize=8, fmt='%.0f',colors='r', inline_spacing=0) 
             cont = m.contourf(x, y, what_I_plot, zelevels, cmap = palette, alpha = self.trans, antialiased=True)
@@ -1138,10 +1161,19 @@ class plot2d(plot):
             zelevpal = np.linspace(zevmin,zevmax,num=self.cbticks)
             ## colorbar corresponding to contour object cont
             ## -- TBD: one colorbar for an entire figure with different subplots
+            if self.vlev is None:
+              if self.cbticks is None:
+                self.cbticks = min([ticks/2+1,21])
+              zelevpal = np.linspace(zevmin,zevmax,num=self.cbticks)
+              spacingval = 'proportional'
+            else:
+              zelevpal = self.vlev
+              self.cbticks = len(zelevpal)
+              spacingval = 'uniform'
             zecb = mpl.colorbar(cont,fraction=frac,pad=pad,\
                                 format=self.fmt,orientation=orientation,\
                                 ticks=zelevpal,\
-                                extend='neither',spacing='proportional')
+                                extend='neither',spacing=spacingval)
             if zeorientation == "horizontal": zecb.ax.set_xlabel(self.title) ; self.title = ""
             # colorbar title --> units
             if self.units not in ["dimless",""]:
@@ -1186,19 +1218,19 @@ class plot2d(plot):
                     q = self.ax.quiver( x[::self.svy,::self.svx],y[::self.svy,::self.svx],\
                                     vecx[::self.svy,::self.svx],vecy[::self.svy,::self.svx],\
                                     angles='xy',color=self.colorvec,pivot='middle',\
-                                    scale=self.wscale*reducevec,width=2*widthvec )
+                                    scale=self.wscale*reducevec,width=widthvec )
                 # make vector key.
                 #keyh = 1.025 ; keyv = 1.05 # upper right corner over colorbar
-                keyh = 0.97 ; keyv = 1.06
+                keyh = 0.93 ; keyv = 1.07
                 #keyh = 0.97 ; keyv = 1.11
                 #keyh = -0.03 ; keyv = 1.08 # upper left corner
 
                 if orientation=="horizontal": keyh = 0.95 ; keyv = -0.30
 
-#                p = self.ax.quiverkey(q,keyh,keyv,\
-#                                  self.wscale,str(int(self.wscale)),\
-#                                  fontproperties={'size': ft*1.25},\
-#                                  color="black",labelpos='S',labelsep = 0.07)
+                p = self.ax.quiverkey(q,keyh,keyv,\
+                                  self.wscale,str(int(self.wscale))+' m/s',\
+                                  fontproperties={'size': ft*1.25},\
+                                  color="black",labelpos='S',labelsep = 0.07)
                 #redefine bounds
                 x1, x2 = self.ax.get_xbound()
                 if self.xmin is not None: x1 = self.xmin
